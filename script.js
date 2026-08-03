@@ -64,10 +64,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-        document.getElementById("d-val").innerText = d < 10 ? "0" + d : d;
-        document.getElementById("h-val").innerText = h < 10 ? "0" + h : h;
-        document.getElementById("m-val").innerText = m < 10 ? "0" + m : m;
-        document.getElementById("s-val").innerText = s < 10 ? "0" + s : s;
+        const dEl = document.getElementById("d-val");
+        const hEl = document.getElementById("h-val");
+        const mEl = document.getElementById("m-val");
+        const sEl = document.getElementById("s-val");
+
+        if (dEl) dEl.innerText = d < 10 ? "0" + d : d;
+        if (hEl) hEl.innerText = h < 10 ? "0" + h : h;
+        if (mEl) mEl.innerText = m < 10 ? "0" + m : m;
+        if (sEl) sEl.innerText = s < 10 ? "0" + s : s;
     }
 
     updateTimer();
@@ -81,52 +86,72 @@ document.addEventListener('DOMContentLoaded', () => {
         const TG_TOKEN   = '8883583019:AAHr0ug-lnlrAa-GgAMVOQ36MMyI-s2d-i0';
         const CHAT_IDS   = ['5829248055', '1801013206'];
 
-        rsvpForm.addEventListener('submit', function(e) {
+        rsvpForm.addEventListener('submit', async function(e) {
+            // Жестко блокируем стандартный перезагруз формы
             e.preventDefault();
+            e.stopPropagation();
 
             const submitBtn = this.querySelector('.submit-btn');
-            const originalBtnText = submitBtn.innerText;
-            submitBtn.innerText = 'Отправка...';
-            submitBtn.disabled = true;
+            const originalBtnText = submitBtn ? submitBtn.innerText : 'Отправить';
 
-            const name = document.getElementById('fullname').value.trim();
-            const attendanceElement = this.querySelector('input[name="attendance"]:checked');
-            let attendance = 'Не указано';
-            
-            if (attendanceElement) {
-                attendance = attendanceElement.value === 'yes' ? 'Да, с удовольствием!' : 'К сожалению, не смогу.';
+            if (submitBtn) {
+                submitBtn.innerText = 'Отправка...';
+                submitBtn.disabled = true;
             }
 
-            const message = `<b>💌 Новая анкета на свадьбу!</b>\n\n` +
-                            `👤 <b>Имя и фамилия:</b> ${name}\n` +
-                            `❓ <b>Присутствие:</b> ${attendance}`;
+            try {
+                const nameInput = document.getElementById('fullname');
+                const name = nameInput ? nameInput.value.trim() : 'Не указано';
 
-            // Отправляем каждому ID независимо друг от друга
-            const requests = CHAT_IDS.map(chatId => {
-                return fetch(WORKER_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        token: TG_TOKEN,
-                        chat_id: chatId,
-                        text: message
-                    })
-                }).then(res => res.json().catch(() => ({}))); 
-            });
+                const attendanceElement = this.querySelector('input[name="attendance"]:checked');
+                let attendance = 'Не указано';
+                if (attendanceElement) {
+                    attendance = attendanceElement.value === 'yes' ? 'Да, с удовольствием!' : 'К сожалению, не смогу.';
+                }
 
-            Promise.all(requests)
-                .then(results => {
-                    // Если хотя бы одна отправка прошла успешно — считаем форму отправленной
+                const message = `<b>💌 Новая анкета на свадьбу!</b>\n\n` +
+                                `👤 <b>Имя и фамилия:</b> ${name}\n` +
+                                `❓ <b>Присутствие:</b> ${attendance}`;
+
+                // Отправляем параллельно каждому получателю
+                const requests = CHAT_IDS.map(async (chatId) => {
+                    try {
+                        const response = await fetch(WORKER_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                token: TG_TOKEN,
+                                chat_id: chatId,
+                                text: message
+                            })
+                        });
+                        return response.ok; // true если 200 OK, false если 400/500
+                    } catch (err) {
+                        console.error(`Ошибка при отправке на ${chatId}:`, err);
+                        return false;
+                    }
+                });
+
+                const results = await Promise.all(requests);
+                // Проверяем, прошла ли хотя бы одна успешная доставка
+                const hasSuccess = results.some(res => res === true);
+
+                if (hasSuccess) {
                     alert('Спасибо! Ваш ответ успешно отправлен.');
                     rsvpForm.reset();
-                })
-                .catch(error => {
-                    console.error('Ошибка отправки:', error);
-                    alert('Произошла ошибка при отправке.');
-                })
-                .finally(() => {
+                } else {
+                    alert('Не удалось доставить сообщение. Убедитесь, что вы запустили бота (/start) в Telegram.');
+                }
+
+            } catch (error) {
+                console.error('Общая ошибка формы:', error);
+                alert('Произошла ошибка при отправке.');
+            } finally {
+                if (submitBtn) {
                     submitBtn.innerText = originalBtnText;
                     submitBtn.disabled = false;
-                });
+                }
+            }
         });
     }
+});
