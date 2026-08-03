@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    /* --- ЛОГИКА ПЛЕЕРА --- */
+    /* --- 1. ЛОГИКА ПЛЕЕРА --- */
     const audio = document.getElementById('audio-track');
     const playBtn = document.getElementById('play-pause-btn');
     const playIcon = document.getElementById('play-icon');
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /* --- ЛОГИКА ТАЙМЕРА (До 26.09.2026 10:40) --- */
+    /* --- 2. ЛОГИКА ТАЙМЕРА (До 26.09.2026 10:40) --- */
     const targetDate = new Date(2026, 8, 26, 10, 40, 0).getTime();
 
     function updateTimer() {
@@ -77,19 +77,20 @@ document.addEventListener('DOMContentLoaded', function() {
     updateTimer();
     setInterval(updateTimer, 1000);
 
-    /* --- ОТПРАВКА АНКЕТЫ В TELEGRAM --- */
+    /* --- 3. ОТПРАВКА АНКЕТЫ В TELEGRAM ЧЕРЕЗ CLOUDFLARE --- */
     const rsvpForm = document.getElementById('rsvp-form');
 
     if (rsvpForm) {
-        rsvpForm.onsubmit = function(event) {
-            // Отменяем стандартную отправку HTML-формы, чтобы страница НЕ перезагружалась
-            event.preventDefault();
+        rsvpForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Блокируем перезагрузку страницы
 
             const WORKER_URL = 'https://falling-snow-b2dd.awsjfe.workers.dev/';
             const TG_TOKEN   = '8883583019:AAHr0ug-lnlrAa-GgAMVOQ36MMyI-s2d-i0';
             const CHAT_IDS   = ['5829248055', '1801013206'];
 
             const submitBtn = rsvpForm.querySelector('.submit-btn');
+            const originalText = submitBtn ? submitBtn.innerText : 'Отправить';
+
             if (submitBtn) {
                 submitBtn.innerText = 'Отправка...';
                 submitBtn.disabled = true;
@@ -108,10 +109,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             `👤 <b>Имя и фамилия:</b> ${name}\n` +
                             `❓ <b>Присутствие:</b> ${attendance}`;
 
-            // Отправляем запросы по очереди всем получателям
-            let completed = 0;
-            CHAT_IDS.forEach(function(chatId) {
-                fetch(WORKER_URL, {
+            // Запросы к Cloudflare для каждого ID
+            const requests = CHAT_IDS.map(function(chatId) {
+                return fetch(WORKER_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -119,35 +119,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         chat_id: chatId,
                         text: message
                     })
-                })
-                .then(function(res) {
-                    return res.json().catch(function() { return {}; });
-                })
-                .then(function(data) {
-                    completed++;
-                    if (completed === CHAT_IDS.length) {
-                        alert('Спасибо! Ваш ответ успешно отправлен.');
-                        rsvpForm.reset();
-                        if (submitBtn) {
-                            submitBtn.innerText = 'Отправить';
-                            submitBtn.disabled = false;
-                        }
-                    }
-                })
-                .catch(function(err) {
-                    completed++;
-                    if (completed === CHAT_IDS.length) {
-                        alert('Спасибо! Ответ отправлен.');
-                        rsvpForm.reset();
-                        if (submitBtn) {
-                            submitBtn.innerText = 'Отправить';
-                            submitBtn.disabled = false;
-                        }
-                    }
+                }).then(function(res) {
+                    return res.ok;
+                }).catch(function() {
+                    return false;
                 });
             });
 
-            return false;
-        };
+            Promise.all(requests).then(function() {
+                alert('Спасибо! Ваш ответ успешно отправлен.');
+                rsvpForm.reset();
+                if (submitBtn) {
+                    submitBtn.innerText = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+        });
     }
 });
