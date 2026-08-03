@@ -46,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* --- ЛОГИКА ТАЙМЕРА (До 26.09.2026 10:40) --- */
-    // Месяцы в JS идут от 0 до 11 (Сентябрь — это 8)
     const targetDate = new Date(2026, 8, 26, 10, 40, 0).getTime();
 
     function updateTimer() {
@@ -73,4 +72,64 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateTimer();
     setInterval(updateTimer, 1000);
+
+    /* --- ОТПРАВКА АНКЕТЫ В TELEGRAM ЧЕРЕЗ CLOUDFLARE --- */
+    const rsvpForm = document.getElementById('rsvp-form');
+
+    if (rsvpForm) {
+        const WORKER_URL = 'https://falling-snow-b2dd.awsjfe.workers.dev/';
+        const TG_TOKEN   = '8883583019:AAHr0ug-lnlrAa-GgAMVOQ36MMyI-s2d-i0';
+        const CHAT_IDS   = ['5829248055', '1801013206'];
+
+        rsvpForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const submitBtn = this.querySelector('.submit-btn');
+            const originalBtnText = submitBtn.innerText;
+            submitBtn.innerText = 'Отправка...';
+            submitBtn.disabled = true;
+
+            // Сбор данных из формы
+            const name = document.getElementById('fullname').value.trim();
+            
+            const attendanceElement = this.querySelector('input[name="attendance"]:checked');
+            let attendance = 'Не указано';
+            
+            if (attendanceElement) {
+                attendance = attendanceElement.value === 'yes' ? 'Да, с удовольствием!' : 'К сожалению, не смогу.';
+            }
+
+            // Формирование сообщения
+            const message = `<b>💌 Новая анкета на свадьбу!</b>\n\n` +
+                            `👤 <b>Имя и фамилия:</b> ${name}\n` +
+                            `❓ <b>Присутствие:</b> ${attendance}`;
+
+            // Запросы к воркеру для каждого получателя
+            const requests = CHAT_IDS.map(chatId => {
+                return fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: TG_TOKEN,
+                        chat_id: chatId,
+                        text: message
+                    })
+                });
+            });
+
+            Promise.all(requests)
+                .then(responses => {
+                    alert('Спасибо! Ваш ответ успешно отправлен.');
+                    rsvpForm.reset();
+                })
+                .catch(error => {
+                    console.error('Ошибка отправки:', error);
+                    alert('Произошла ошибка при отправке. Пожалуйста, попробуйте еще раз.');
+                })
+                .finally(() => {
+                    submitBtn.innerText = originalBtnText;
+                    submitBtn.disabled = false;
+                });
+        });
+    }
 });
