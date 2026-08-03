@@ -84,7 +84,7 @@ if (rsvpForm) {
 
         const WORKER_URL = 'https://wedding-bot-proxy.awsjfe.workers.dev/';
         const TG_TOKEN   = '8883583019:AAHr0ug-lnlrAa-GgAMVOQ36MMyI-s2d-i0';
-        const CHAT_IDS   = ['1801013206']; // Оставили только один ID
+        const CHAT_IDS   = ['5829248055']; // Оставили только один ID
 
         const submitBtn = rsvpForm.querySelector('.submit-btn');
         const originalText = submitBtn ? submitBtn.innerText : 'Отправить';
