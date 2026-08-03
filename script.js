@@ -75,16 +75,16 @@ function updateTimer() {
 updateTimer();
 setInterval(updateTimer, 1000);
 
-/* --- 3. ОТПРАВКА АНКЕТЫ В TELEGRAM ЧЕРЕЗ CLOUDFLARE --- */
+/* --- 3. ОТПРАВКА АНКЕТЫ В TELEGRAM --- */
 const rsvpForm = document.getElementById('rsvp-form');
 
 if (rsvpForm) {
     rsvpForm.addEventListener('submit', function(e) {
-        e.preventDefault(); // Теперь блокировка сработает гарантированно
+        e.preventDefault();
 
-       const WORKER_URL = 'https://wedding-bot-proxy.awsjfe.workers.dev/';
+        const WORKER_URL = 'https://wedding-bot-proxy.awsjfe.workers.dev/';
         const TG_TOKEN   = '8883583019:AAHr0ug-lnlrAa-GgAMVOQ36MMyI-s2d-i0';
-        const CHAT_IDS   = ['5829248055', '1801013206'];
+        const CHAT_IDS   = ['1801013206']; // Оставили только один ID
 
         const submitBtn = rsvpForm.querySelector('.submit-btn');
         const originalText = submitBtn ? submitBtn.innerText : 'Отправить';
@@ -117,15 +117,17 @@ if (rsvpForm) {
                     text: message
                 })
             }).then(function(res) {
-                return res.ok;
-            }).catch(function() {
-                return false;
+                return res.json();
+            }).catch(function(err) {
+                return { ok: false, error: err };
             });
         });
 
-        Promise.all(requests).then(function() {
+        Promise.all(requests).then(function(results) {
+            console.log('Ответ от сервера:', results);
             alert('Спасибо! Ваш ответ успешно отправлен.');
             rsvpForm.reset();
+        }).finally(function() {
             if (submitBtn) {
                 submitBtn.innerText = originalText;
                 submitBtn.disabled = false;
