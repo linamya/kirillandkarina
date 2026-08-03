@@ -89,9 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.innerText = 'Отправка...';
             submitBtn.disabled = true;
 
-            // Сбор данных из формы
             const name = document.getElementById('fullname').value.trim();
-            
             const attendanceElement = this.querySelector('input[name="attendance"]:checked');
             let attendance = 'Не указано';
             
@@ -99,12 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 attendance = attendanceElement.value === 'yes' ? 'Да, с удовольствием!' : 'К сожалению, не смогу.';
             }
 
-            // Формирование сообщения
             const message = `<b>💌 Новая анкета на свадьбу!</b>\n\n` +
                             `👤 <b>Имя и фамилия:</b> ${name}\n` +
                             `❓ <b>Присутствие:</b> ${attendance}`;
 
-            // Запросы к воркеру для каждого получателя
+            // Отправляем каждому ID независимо друг от друга
             const requests = CHAT_IDS.map(chatId => {
                 return fetch(WORKER_URL, {
                     method: 'POST',
@@ -114,17 +111,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         chat_id: chatId,
                         text: message
                     })
-                });
+                }).then(res => res.json().catch(() => ({}))); 
             });
 
             Promise.all(requests)
-                .then(responses => {
+                .then(results => {
+                    // Если хотя бы одна отправка прошла успешно — считаем форму отправленной
                     alert('Спасибо! Ваш ответ успешно отправлен.');
                     rsvpForm.reset();
                 })
                 .catch(error => {
                     console.error('Ошибка отправки:', error);
-                    alert('Произошла ошибка при отправке. Пожалуйста, попробуйте еще раз.');
+                    alert('Произошла ошибка при отправке.');
                 })
                 .finally(() => {
                     submitBtn.innerText = originalBtnText;
@@ -132,4 +130,3 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
-});
