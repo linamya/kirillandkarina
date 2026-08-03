@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Свадебное приглашение</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="video-bg-container">
+        <video autoplay muted loop playsinline preload="auto" disablepictureinpicture id="bg-video" poster="fon.png">
+            <source src="fon.mp4" type="video/mp4">
+        </video>
+        <div class="video-overlay"></div>
+    </div>
+
+    <main class="site-wrapper">
+
+        <section class="block">
+            <img src="photo1.png" alt="Фото 1" class="full-width-img">
+        </section>
+
+        <section class="block">
+            <div class="player-container">
+                <audio id="audio-track" src="music.mp3"></audio>
+                
+                <button id="play-pause-btn" class="play-btn" aria-label="Воспроизвести">
+                    <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg id="pause-icon" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </button>
+
+                <div class="player-info">
+                    <div class="track-name">L'one-Мой океан-это ты</div>
+                    <div class="progress-wrapper">
+                        <input type="range" id="progress-bar" value="0" max="100">
+                        <div class="time-display">
+                            <span id="current-time">0:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="block">
+            <img src="photo2.png" alt="Фото 2" class="full-width-img">
+        </section>
+
+        <section class="block">
+            <a href="https://yandex.ru/maps/10744/ozery/house/1_y_mikrorayon_3/Z0EYcwVlS0cGQFtufXR0dHVmZg==/?ll=38.525221%2C54.855953&z=16" target="_blank" rel="noopener noreferrer">
+                <img src="photo3.png" alt="Карта 1" class="full-width-img">
+            </a>
+        </section>
+
+        <section class="block">
+            <a href="https://yandex.ru/maps/org/otdel_zags_okruzhnogo_upravleniya_sotsialnogo_razvitiya_11_ministerstva_sotsialnogo_razvitiya_moskovskoy_oblasti/73623764244/?ll=38.764048%2C55.093633&z=16" target="_blank" rel="noopener noreferrer">
+                <img src="photo4.png" alt="Карта 2" class="full-width-img">
+            </a>
+        </section>
+
+        <section class="block">
+            <a href="https://yandex.ru/maps/10744/ozery/house/kommunisticheskaya_ploshchad_13/Z0EYcwFhTEQEQFtufXR0c3hrZA==/?ll=38.561513%2C54.852480&z=16" target="_blank" rel="noopener noreferrer">
+                <img src="photo5.png" alt="Карта 3" class="full-width-img">
+            </a>
+        </section>
+
+        <section class="block">
+            <img src="photo6.png" alt="Фото 6" class="full-width-img">
+        </section>
+
+        <section class="block">
+            <img src="photo7.png" alt="Фото 7" class="full-width-img">
+        </section>
+
+        <section class="block">
+            <img src="photo8.png" alt="Фото 8" class="full-width-img">
+        </section>
+
+        <section class="block">
+            <img src="photo9.png" alt="Фото 9" class="full-width-img">
+        </section>
+
+        <section class="block padding-block">
+            <form class="rsvp-form" onsubmit="event.preventDefault(); alert('Спасибо за Ваш ответ!');">
+                <div class="form-group">
+                    <label for="fullname" class="form-label">Ваше имя и фамилия:</label>
+                    <input type="text" id="fullname" name="fullname" class="form-input" required placeholder="Введите имя и фамилию">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Сможете ли вы присутствовать на свадьбе?</label>
+                    <label class="radio-label">
+                        <input type="radio" name="attendance" value="yes" required>
+                        <span>Да, с удовольствием!</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="attendance" value="no">
+                        <span>К сожалению, не смогу.</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="submit-btn">Отправить</button>
+            </form>
+        </section>
+
+        <section class="block">
+            <img src="photo10.png" alt="Фото 10" class="full-width-img">
+        </section>
+
+        <section class="block padding-block">
+            <div class="timer-wrapper">
+                <div class="timer-container" id="dual-font-timer">
+                    <div class="timer-item">
+                        <div class="timer-value" id="d-val">00</div>
+                        <div class="timer-label">дней</div>
+                    </div>
+                    <div class="timer-item">
+                        <div class="timer-value" id="h-val">00</div>
+                        <div class="timer-label">часов</div>
+                    </div>
+                    <div class="timer-item">
+                        <div class="timer-value" id="m-val">00</div>
+                        <div class="timer-label">минут</div>
+                    </div>
+                    <div class="timer-item">
+                        <div class="timer-value" id="s-val">00</div>
+                        <div class="timer-label">секунд</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
