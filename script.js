@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
 
     /* --- ЛОГИКА ПЛЕЕРА --- */
     const audio = document.getElementById('audio-track');
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentTimeEl = document.getElementById('current-time');
 
     if (playBtn && audio) {
-        playBtn.addEventListener('click', () => {
+        playBtn.addEventListener('click', function() {
             if (audio.paused) {
                 audio.play();
                 playIcon.style.display = 'none';
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        audio.addEventListener('timeupdate', () => {
+        audio.addEventListener('timeupdate', function() {
             if (audio.duration) {
                 const progress = (audio.currentTime / audio.duration) * 100;
                 progressBar.value = progress;
@@ -33,12 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        progressBar.addEventListener('input', () => {
+        progressBar.addEventListener('input', function() {
             const time = (progressBar.value / 100) * audio.duration;
             audio.currentTime = time;
         });
 
-        audio.addEventListener('ended', () => {
+        audio.addEventListener('ended', function() {
             playIcon.style.display = 'block';
             pauseIcon.style.display = 'none';
             progressBar.value = 0;
@@ -51,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateTimer() {
         const now = new Date().getTime();
         const diff = targetDate - now;
-
         const timerContainer = document.getElementById("dual-font-timer");
 
         if (diff <= 0) {
@@ -78,80 +77,77 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTimer();
     setInterval(updateTimer, 1000);
 
-    /* --- ОТПРАВКА АНКЕТЫ В TELEGRAM ЧЕРЕЗ CLOUDFLARE --- */
+    /* --- ОТПРАВКА АНКЕТЫ В TELEGRAM --- */
     const rsvpForm = document.getElementById('rsvp-form');
 
     if (rsvpForm) {
-        const WORKER_URL = 'https://falling-snow-b2dd.awsjfe.workers.dev/';
-        const TG_TOKEN   = '8883583019:AAHr0ug-lnlrAa-GgAMVOQ36MMyI-s2d-i0';
-        const CHAT_IDS   = ['5829248055', '1801013206'];
+        rsvpForm.onsubmit = function(event) {
+            // Отменяем стандартную отправку HTML-формы, чтобы страница НЕ перезагружалась
+            event.preventDefault();
 
-        rsvpForm.addEventListener('submit', async function(e) {
-            // Жестко блокируем стандартный перезагруз формы
-            e.preventDefault();
-            e.stopPropagation();
+            const WORKER_URL = 'https://falling-snow-b2dd.awsjfe.workers.dev/';
+            const TG_TOKEN   = '8883583019:AAHr0ug-lnlrAa-GgAMVOQ36MMyI-s2d-i0';
+            const CHAT_IDS   = ['5829248055', '1801013206'];
 
-            const submitBtn = this.querySelector('.submit-btn');
-            const originalBtnText = submitBtn ? submitBtn.innerText : 'Отправить';
-
+            const submitBtn = rsvpForm.querySelector('.submit-btn');
             if (submitBtn) {
                 submitBtn.innerText = 'Отправка...';
                 submitBtn.disabled = true;
             }
 
-            try {
-                const nameInput = document.getElementById('fullname');
-                const name = nameInput ? nameInput.value.trim() : 'Не указано';
+            const nameInput = document.getElementById('fullname');
+            const name = nameInput ? nameInput.value.trim() : 'Не указано';
 
-                const attendanceElement = this.querySelector('input[name="attendance"]:checked');
-                let attendance = 'Не указано';
-                if (attendanceElement) {
-                    attendance = attendanceElement.value === 'yes' ? 'Да, с удовольствием!' : 'К сожалению, не смогу.';
-                }
+            const attendanceElement = rsvpForm.querySelector('input[name="attendance"]:checked');
+            let attendance = 'Не указано';
+            if (attendanceElement) {
+                attendance = attendanceElement.value === 'yes' ? 'Да, с удовольствием!' : 'К сожалению, не смогу.';
+            }
 
-                const message = `<b>💌 Новая анкета на свадьбу!</b>\n\n` +
-                                `👤 <b>Имя и фамилия:</b> ${name}\n` +
-                                `❓ <b>Присутствие:</b> ${attendance}`;
+            const message = `<b>💌 Новая анкета на свадьбу!</b>\n\n` +
+                            `👤 <b>Имя и фамилия:</b> ${name}\n` +
+                            `❓ <b>Присутствие:</b> ${attendance}`;
 
-                // Отправляем параллельно каждому получателю
-                const requests = CHAT_IDS.map(async (chatId) => {
-                    try {
-                        const response = await fetch(WORKER_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                token: TG_TOKEN,
-                                chat_id: chatId,
-                                text: message
-                            })
-                        });
-                        return response.ok; // true если 200 OK, false если 400/500
-                    } catch (err) {
-                        console.error(`Ошибка при отправке на ${chatId}:`, err);
-                        return false;
+            // Отправляем запросы по очереди всем получателям
+            let completed = 0;
+            CHAT_IDS.forEach(function(chatId) {
+                fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: TG_TOKEN,
+                        chat_id: chatId,
+                        text: message
+                    })
+                })
+                .then(function(res) {
+                    return res.json().catch(function() { return {}; });
+                })
+                .then(function(data) {
+                    completed++;
+                    if (completed === CHAT_IDS.length) {
+                        alert('Спасибо! Ваш ответ успешно отправлен.');
+                        rsvpForm.reset();
+                        if (submitBtn) {
+                            submitBtn.innerText = 'Отправить';
+                            submitBtn.disabled = false;
+                        }
+                    }
+                })
+                .catch(function(err) {
+                    completed++;
+                    if (completed === CHAT_IDS.length) {
+                        alert('Спасибо! Ответ отправлен.');
+                        rsvpForm.reset();
+                        if (submitBtn) {
+                            submitBtn.innerText = 'Отправить';
+                            submitBtn.disabled = false;
+                        }
                     }
                 });
+            });
 
-                const results = await Promise.all(requests);
-                // Проверяем, прошла ли хотя бы одна успешная доставка
-                const hasSuccess = results.some(res => res === true);
-
-                if (hasSuccess) {
-                    alert('Спасибо! Ваш ответ успешно отправлен.');
-                    rsvpForm.reset();
-                } else {
-                    alert('Не удалось доставить сообщение. Убедитесь, что вы запустили бота (/start) в Telegram.');
-                }
-
-            } catch (error) {
-                console.error('Общая ошибка формы:', error);
-                alert('Произошла ошибка при отправке.');
-            } finally {
-                if (submitBtn) {
-                    submitBtn.innerText = originalBtnText;
-                    submitBtn.disabled = false;
-                }
-            }
-        });
+            return false;
+        };
     }
 });
